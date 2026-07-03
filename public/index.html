@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>鑫鴻澄鐵板燒線上候位系統</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="guest-shell">
+      <header class="site-header">
+        <div class="title-group">
+          <span class="brand-mark" aria-hidden="true">♨</span>
+          <div>
+            <h1>鑫鴻澄鐵板燒線上候位系統</h1>
+            <p>客人線上輸入姓名與人數取號，立即查看前方候位組數與人數。</p>
+          </div>
+        </div>
+        <div class="clock-card" aria-live="polite">
+          <strong id="currentTime">--:--</strong>
+          <span id="currentDate">--</span>
+        </div>
+      </header>
+
+      <section class="guest-grid">
+        <section class="guest-panel">
+          <div class="panel-heading">
+            <h2>線上取候位號碼</h2>
+            <p>填好資料後送出，系統會自動產生候位號碼。</p>
+          </div>
+
+          <form id="queueForm" class="queue-form">
+            <div class="form-row">
+              <label>
+                <span>姓名</span>
+                <input id="name" name="name" type="text" autocomplete="name" placeholder="例如：王小姐" required>
+              </label>
+
+              <label>
+                <span>電話</span>
+                <input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="例如：0912345678" required>
+              </label>
+            </div>
+
+            <div class="form-row">
+              <label>
+                <span>用餐人數</span>
+                <div class="stepper">
+                  <button type="button" id="decreaseParty" class="step-button" aria-label="減少人數">−</button>
+                  <input id="partySize" name="partySize" type="number" inputmode="numeric" min="1" max="20" value="2" required>
+                  <button type="button" id="increaseParty" class="step-button" aria-label="增加人數">+</button>
+                </div>
+              </label>
+
+              <label>
+                <span>座位需求</span>
+                <select id="seatingPreference" name="seatingPreference">
+                  <option value="不限">不限</option>
+                  <option value="吧台">吧台</option>
+                  <option value="桌位">桌位</option>
+                  <option value="兒童椅">需要兒童椅</option>
+                </select>
+              </label>
+            </div>
+
+            <button type="submit" class="primary-action">取得候位號碼</button>
+            <p id="formMessage" class="form-message" role="status"></p>
+          </form>
+
+          <section id="ticket" class="ticket hidden" aria-live="polite">
+            <p>您的候位號碼</p>
+            <strong id="ticketNumber"></strong>
+            <span id="ticketMeta"></span>
+            <div class="ticket-mini-grid">
+              <div>
+                <small>登記姓名</small>
+                <b id="ticketName"></b>
+              </div>
+              <div>
+                <small>用餐人數</small>
+                <b id="ticketParty"></b>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <section class="queue-board">
+          <div class="panel-heading">
+            <h2>目前候位資訊</h2>
+            <p>櫃台可叫下一組、完成入座，客人可看見目前等待狀態。</p>
+          </div>
+
+          <div class="stats-grid" aria-live="polite">
+            <article>
+              <span>目前叫號</span>
+              <strong id="nowCalling">--</strong>
+            </article>
+            <article>
+              <span>等待組數</span>
+              <strong><b id="heroQueueCount">0</b></strong>
+            </article>
+            <article>
+              <span>等待人數</span>
+              <strong><b id="waitingPeople">0</b></strong>
+            </article>
+            <article>
+              <span>下一號</span>
+              <strong id="nextNumber">--</strong>
+            </article>
+          </div>
+
+          <div class="section-heading queue-list-heading">
+            <h2>候位清單</h2>
+            <span id="queueCount">0 組 / 0 位</span>
+          </div>
+          <div id="publicQueue" class="public-queue"></div>
+        </section>
+      </section>
+    </main>
+
+    <script src="/guest.js"></script>
+  </body>
+</html>

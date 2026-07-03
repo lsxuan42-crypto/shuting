@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>候位管理</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="admin-shell">
+      <header class="admin-header">
+        <div>
+          <p>店員後台</p>
+          <h1>候位管理</h1>
+        </div>
+        <form id="pinForm" class="pin-form">
+          <input id="pinInput" type="password" inputmode="numeric" placeholder="管理 PIN" autocomplete="current-password">
+          <button type="submit">登入</button>
+        </form>
+      </header>
+
+      <section class="admin-summary">
+        <div>
+          <span>等待中</span>
+          <strong id="waitingCount">0</strong>
+        </div>
+        <div>
+          <span>已叫號</span>
+          <strong id="calledCount">0</strong>
+        </div>
+        <div>
+          <span>總取號</span>
+          <strong id="totalCount">0</strong>
+        </div>
+      </section>
+
+      <section class="admin-list-shell">
+        <div class="section-heading">
+          <h2>候位清單</h2>
+          <span id="adminStatus">尚未登入</span>
+        </div>
+        <div id="adminList" class="admin-list"></div>
+      </section>
+    </main>
+
+    <script src="/admin.js"></script>
+  </body>
+</html>
