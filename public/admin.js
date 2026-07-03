@@ -38,10 +38,22 @@ function statusClass(status) {
   return `status-${status}`;
 }
 
+function wasCalledToday(entry) {
+  if (!entry.calledAt) return false;
+
+  const calledAt = new Date(entry.calledAt);
+  const today = new Date();
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const startOfTomorrow = new Date(startOfToday);
+  startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+
+  return calledAt >= startOfToday && calledAt < startOfTomorrow;
+}
+
 function renderAdmin(queue) {
   const activeQueue = queue.filter((entry) => entry.status === "waiting" || entry.status === "called");
   const waiting = queue.filter((entry) => entry.status === "waiting").length;
-  const called = queue.filter((entry) => entry.status === "called").length;
+  const called = queue.filter(wasCalledToday).length;
 
   waitingCount.textContent = waiting;
   calledCount.textContent = called;
