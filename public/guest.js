@@ -10,6 +10,7 @@ const queueCount = document.querySelector("#queueCount");
 const heroQueueCount = document.querySelector("#heroQueueCount");
 const waitingPeople = document.querySelector("#waitingPeople");
 const nowCalling = document.querySelector("#nowCalling");
+const nowCallingTime = document.querySelector("#nowCallingTime");
 const nextNumber = document.querySelector("#nextNumber");
 const currentTime = document.querySelector("#currentTime");
 const currentDate = document.querySelector("#currentDate");
@@ -57,17 +58,19 @@ function setPartySize(value) {
   partySizeInput.value = Math.min(20, Math.max(1, value));
 }
 
-function renderQueue(queue) {
-  const calledEntry = queue.find((entry) => entry.status === "called");
+function renderQueue(queue, summary = {}) {
   const waitingEntries = queue.filter((entry) => entry.status === "waiting");
   const peopleCount = queue.reduce((total, entry) => total + Number(entry.partySize || 0), 0);
   const nextWaiting = waitingEntries[0];
+  const lastCalledNumber = summary.lastCalledNumber;
+  const lastCalledAt = summary.lastCalledAt;
 
-  queueCount.textContent = `${queue.length} 組 / ${peopleCount} 位`;
-  heroQueueCount.textContent = queue.length;
-  waitingPeople.textContent = peopleCount;
-  nowCalling.textContent = calledEntry ? formatNumber(calledEntry.number) : "--";
-  nextNumber.textContent = nextWaiting ? formatNumber(nextWaiting.number) : "--";
+  queueCount.textContent = `${summary.waitingGroups ?? queue.length} 組 / ${summary.waitingPeople ?? peopleCount} 位`;
+  heroQueueCount.textContent = summary.waitingGroups ?? queue.length;
+  waitingPeople.textContent = summary.waitingPeople ?? peopleCount;
+  nowCalling.textContent = lastCalledNumber ? formatNumber(lastCalledNumber) : "--";
+  nowCallingTime.textContent = lastCalledAt ? `${timeFormatter.format(new Date(lastCalledAt))} 叫號` : "尚未叫號";
+  nextNumber.textContent = summary.nextNumber ? formatNumber(summary.nextNumber) : nextWaiting ? formatNumber(nextWaiting.number) : "--";
 
   if (!queue.length) {
     publicQueue.innerHTML = `<div class="queue-empty">目前沒有候位</div>`;
@@ -102,7 +105,7 @@ function renderQueue(queue) {
 async function loadQueue() {
   const response = await fetch("/api/queue", { cache: "no-store" });
   const data = await response.json();
-  renderQueue(data.queue);
+  renderQueue(data.queue, data.summary);
 }
 
 decreaseParty.addEventListener("click", () => {

@@ -349,6 +349,14 @@ h2 {
   line-height: 1;
 }
 
+.stat-note {
+  display: block;
+  margin-top: 14px;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 850;
+}
+
 .stats-grid b {
   font: inherit;
 }

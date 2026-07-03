@@ -87,6 +87,23 @@ function publicQueue(entries) {
     }));
 }
 
+function publicSummary(entries) {
+  const activeEntries = publicQueue(entries);
+  const waitingEntries = activeEntries.filter((entry) => entry.status === "waiting");
+  const lastCalledEntry = entries
+    .filter((entry) => entry.calledAt)
+    .sort((a, b) => new Date(b.calledAt) - new Date(a.calledAt))[0];
+  const waitingPeople = activeEntries.reduce((total, entry) => total + Number(entry.partySize || 0), 0);
+
+  return {
+    lastCalledNumber: lastCalledEntry ? lastCalledEntry.number : null,
+    lastCalledAt: lastCalledEntry ? lastCalledEntry.calledAt : null,
+    waitingGroups: activeEntries.length,
+    waitingPeople,
+    nextNumber: waitingEntries[0] ? waitingEntries[0].number : null
+  };
+}
+
 function normalizePhone(phone) {
   return String(phone || "").replace(/[^\d+]/g, "").slice(0, 20);
 }
@@ -130,7 +147,11 @@ async function handleApi(req, res) {
 
   if (req.method === "GET" && url.pathname === "/api/queue") {
     const store = readStore();
-    sendJson(res, 200, { queue: publicQueue(store.entries), lastNumber: store.lastNumber });
+    sendJson(res, 200, {
+      queue: publicQueue(store.entries),
+      summary: publicSummary(store.entries),
+      lastNumber: store.lastNumber
+    });
     return;
   }
 
