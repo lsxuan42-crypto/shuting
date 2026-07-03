@@ -4,6 +4,7 @@ const adminStatus = document.querySelector("#adminStatus");
 const adminList = document.querySelector("#adminList");
 const waitingCount = document.querySelector("#waitingCount");
 const calledCount = document.querySelector("#calledCount");
+const lastCalledGroup = document.querySelector("#lastCalledGroup");
 const totalCount = document.querySelector("#totalCount");
 
 let adminPin = localStorage.getItem("waitlistAdminPin") || "";
@@ -50,13 +51,22 @@ function wasCalledToday(entry) {
   return calledAt >= startOfToday && calledAt < startOfTomorrow;
 }
 
+function latestCalledEntry(queue) {
+  return queue
+    .filter(wasCalledToday)
+    .sort((a, b) => new Date(b.calledAt) - new Date(a.calledAt))[0];
+}
+
 function renderAdmin(queue) {
   const activeQueue = queue.filter((entry) => entry.status === "waiting" || entry.status === "called");
   const waiting = queue.filter((entry) => entry.status === "waiting").length;
-  const called = queue.filter(wasCalledToday).length;
+  const calledEntries = queue.filter(wasCalledToday);
+  const called = calledEntries.length;
+  const latestCalled = latestCalledEntry(queue);
 
   waitingCount.textContent = waiting;
   calledCount.textContent = called;
+  lastCalledGroup.textContent = latestCalled ? `${formatNumber(latestCalled.number)} ${latestCalled.name || "貴賓"}` : "--";
   totalCount.textContent = queue.length;
 
   if (!activeQueue.length) {

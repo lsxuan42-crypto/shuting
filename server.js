@@ -131,7 +131,7 @@ function handleStatic(req, res) {
     const ext = path.extname(filePath).toLowerCase();
     res.writeHead(200, {
       "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
-      "Cache-Control": ext === ".html" ? "no-store" : "public, max-age=3600"
+      "Cache-Control": "no-store"
     });
     res.end(content);
   });
@@ -240,7 +240,9 @@ async function handleApi(req, res) {
       }
 
       entry.status = nextStatus;
-      if (nextStatus === "called") entry.calledAt = new Date().toISOString();
+      if (nextStatus === "called" || nextStatus === "seated") {
+        entry.calledAt = entry.calledAt || new Date().toISOString();
+      }
       if (nextStatus === "seated") entry.seatedAt = new Date().toISOString();
       if (nextStatus === "canceled") entry.canceledAt = new Date().toISOString();
       writeStore(store);
