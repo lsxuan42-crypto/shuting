@@ -114,6 +114,14 @@ async function loadAdminQueue() {
   renderAdmin(data.queue);
 }
 
+async function keepServiceAwake() {
+  try {
+    await fetch("/api/health", { cache: "no-store" });
+  } catch (error) {
+    // The next queue refresh will show if the service needs attention.
+  }
+}
+
 async function updateStatus(id, status) {
   const response = await fetch(`/api/admin/queue/${id}`, {
     method: "PATCH",
@@ -147,4 +155,6 @@ adminList.addEventListener("click", (event) => {
 });
 
 if (adminPin) loadAdminQueue();
+keepServiceAwake();
 setInterval(loadAdminQueue, 4000);
+setInterval(keepServiceAwake, 240000);
