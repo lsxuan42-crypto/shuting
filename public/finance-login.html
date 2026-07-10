@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>財務報表登入</title>
+    <script>
+      if (location.protocol === "file:") {
+        location.replace("https://shuting.onrender.com/finance-login");
+      }
+    </script>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="finance-shell auth-shell">
+      <section class="finance-card login-card">
+        <div class="finance-section-title">
+          <div>
+            <p class="eyebrow">餐飲業財務報表</p>
+            <h1>登入</h1>
+          </div>
+        </div>
+        <form id="loginForm" class="auth-form">
+          <label>
+            <span>帳號</span>
+            <input id="username" name="username" type="text" autocomplete="username" required>
+          </label>
+          <label>
+            <span>密碼</span>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+          </label>
+          <button type="submit" class="primary-action">登入</button>
+          <p id="loginMessage" class="form-message" role="status"></p>
+        </form>
+        <p class="muted-note">預設管理者：admin / 1234</p>
+      </section>
+    </main>
+    <script src="/finance-auth.js"></script>
+  </body>
+</html>

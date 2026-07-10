@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>月報表</title>
+    <script>
+      if (location.protocol === "file:") {
+        location.replace("https://shuting.onrender.com/monthly-report");
+      }
+    </script>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="finance-shell">
+      <header class="finance-header">
+        <div>
+          <p>餐飲業財務報表</p>
+          <h1>月報表</h1>
+        </div>
+        <nav class="top-actions" aria-label="報表切換">
+          <a href="/finance">日報表</a>
+          <a id="userAdminLink" class="hidden" href="/finance-users">帳號管理</a>
+          <button id="logoutButton" type="button" class="link-button">登出</button>
+        </nav>
+      </header>
+
+      <section class="finance-card month-tools">
+        <label>
+          <span>店面</span>
+          <select id="storeSelect" required></select>
+        </label>
+        <label>
+          <span>選擇月份</span>
+          <input id="reportMonth" type="month">
+        </label>
+        <div class="fee-rate-grid">
+          <label>
+            <span>Line Pay 手續費</span>
+            <input id="linePayFee" type="number" inputmode="decimal" min="0" max="100" step="0.1">
+          </label>
+          <label>
+            <span>刷卡手續費</span>
+            <input id="cardFee" type="number" inputmode="decimal" min="0" max="100" step="0.1">
+          </label>
+          <label>
+            <span>熊貓手續費</span>
+            <input id="foodpandaFee" type="number" inputmode="decimal" min="0" max="100" step="0.1">
+          </label>
+        </div>
+        <button id="saveFeeRates" type="button" class="secondary">儲存費率</button>
+        <p id="monthlyMessage" class="form-message" role="status"></p>
+      </section>
+
+      <section class="monthly-kpis">
+        <article>
+          <span>月總收入</span>
+          <strong id="monthIncome">$0</strong>
+        </article>
+        <article>
+          <span>月總支出</span>
+          <strong id="monthExpense">$0</strong>
+        </article>
+        <article>
+          <span>手續費支出</span>
+          <strong id="monthFees">$0</strong>
+        </article>
+        <article class="profit-card">
+          <span>月盈餘</span>
+          <strong id="monthProfit">$0</strong>
+        </article>
+      </section>
+
+      <section class="finance-card report-table-card">
+        <div class="finance-section-title">
+          <h2>月報表</h2>
+          <strong id="reportCount">0 天</strong>
+        </div>
+        <div class="table-scroll">
+          <table class="finance-table layered-table">
+            <thead>
+              <tr>
+                <th>層級</th>
+                <th>項目</th>
+                <th>金額</th>
+                <th>備註</th>
+              </tr>
+            </thead>
+            <tbody id="monthlySummaryRows"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="finance-card report-table-card">
+        <div class="finance-section-title">
+          <h2>每日明細</h2>
+          <strong id="dailyCount">0 筆</strong>
+        </div>
+        <div class="table-scroll">
+          <table class="finance-table daily-detail-table">
+            <thead>
+              <tr>
+                <th>日期</th>
+                <th>總收入</th>
+                <th>總支出</th>
+                <th>每日盈餘</th>
+                <th>備註</th>
+              </tr>
+            </thead>
+            <tbody id="dailyRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <script src="/finance-auth.js"></script>
+    <script src="/finance.js"></script>
+  </body>
+</html>

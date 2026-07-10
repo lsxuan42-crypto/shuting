@@ -1,3 +1,5 @@
 node_modules
 .DS_Store
 data/queue.json
+data/finance-reports.json
+data/finance-users.json

@@ -7,12 +7,14 @@
 - 啟動指令：`npm start`
 - 連接埠：使用主機提供的 `PORT`
 - 管理 PIN：設定環境變數 `ADMIN_PIN`
+- 財務報表管理者密碼：設定環境變數 `FINANCE_ADMIN_PASSWORD`
 - 候位資料檔：建議設定環境變數 `DATA_FILE`
 
 範例：
 
 ```text
 ADMIN_PIN=請改成你的管理密碼
+FINANCE_ADMIN_PASSWORD=請改成你的財務管理者密碼
 DATA_FILE=/data/queue.json
 ```
 
@@ -28,5 +30,9 @@ DATA_FILE=/data/queue.json
 
 - 客人取號頁：`https://你的網址/`
 - 店員管理頁：`https://你的網址/admin`
+- 財務登入頁：`https://你的網址/finance-login`
+- 日報表：`https://你的網址/finance`
+- 月報表：`https://你的網址/monthly-report`
+- 帳號管理：`https://你的網址/finance-users`
 
 可以把客人取號頁做成 QR code 貼在店門口。

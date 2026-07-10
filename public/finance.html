@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>日報表</title>
+    <script>
+      if (location.protocol === "file:") {
+        location.replace("https://shuting.onrender.com/finance");
+      }
+    </script>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="finance-shell">
+      <header class="finance-header">
+        <div>
+          <p>餐飲業財務報表</p>
+          <h1>日報表</h1>
+        </div>
+        <nav class="top-actions" aria-label="報表切換">
+          <a href="/monthly-report">月報表</a>
+          <a id="userAdminLink" class="hidden" href="/finance-users">帳號管理</a>
+          <button id="logoutButton" type="button" class="link-button">登出</button>
+        </nav>
+      </header>
+
+      <form id="financeForm" class="finance-form">
+        <section class="finance-card date-card">
+          <label>
+            <span>店面</span>
+            <select id="storeSelect" name="storeId" required></select>
+          </label>
+          <label>
+            <span>回報日期</span>
+            <input id="reportDate" name="date" type="date" required>
+          </label>
+          <p id="dailyMessage" class="form-message" role="status"></p>
+        </section>
+
+        <section class="finance-card report-table-card">
+          <div class="finance-section-title">
+            <h2>日報表</h2>
+            <strong id="dailyProfit">$0</strong>
+          </div>
+          <div class="table-scroll">
+            <table class="finance-table layered-table daily-report-table">
+              <thead>
+                <tr>
+                  <th>層級</th>
+                  <th>項目</th>
+                  <th>金額</th>
+                  <th>說明</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="group-row">
+                  <td>收入</td>
+                  <td>收入小計</td>
+                  <td id="incomeTotal">$0</td>
+                  <td>各收入項目加總</td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">Line Pay</td>
+                  <td><input name="linePay" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">現金</td>
+                  <td><input name="cash" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">刷卡</td>
+                  <td><input name="card" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">禮券</td>
+                  <td><input name="voucher" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">熊貓</td>
+                  <td><input name="foodpanda" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr class="group-row expense-group">
+                  <td>支出</td>
+                  <td>支出小計</td>
+                  <td id="expenseTotal">$0</td>
+                  <td>各支出項目加總</td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">海鮮</td>
+                  <td><input name="seafood" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">肉品</td>
+                  <td><input name="meat" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">雜物</td>
+                  <td><input name="supplies" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">菜品</td>
+                  <td><input name="vegetables" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">其他食品</td>
+                  <td><input name="otherFood" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr>
+                  <td></td>
+                  <td class="sub-item">配料</td>
+                  <td><input name="ingredients" type="number" inputmode="numeric" min="0" step="1" value="0"></td>
+                  <td></td>
+                </tr>
+                <tr class="group-row total-row">
+                  <td>總結</td>
+                  <td>每日總收入</td>
+                  <td id="dailyIncome">$0</td>
+                  <td></td>
+                </tr>
+                <tr class="group-row total-row">
+                  <td>總結</td>
+                  <td>每日總支出</td>
+                  <td id="dailyExpense">$0</td>
+                  <td></td>
+                </tr>
+                <tr class="group-row total-row profit-row">
+                  <td>總結</td>
+                  <td>每日盈餘</td>
+                  <td id="dailyProfitTable">$0</td>
+                  <td>收入 - 支出</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="finance-card daily-summary-card">
+          <label>
+            <span>備註</span>
+            <input name="note" type="text" maxlength="300" placeholder="例如：補貨、特殊活動、天氣影響">
+          </label>
+          <button type="submit" class="primary-action">儲存日報表</button>
+        </section>
+      </form>
+    </main>
+
+    <script src="/finance-auth.js"></script>
+    <script src="/finance.js"></script>
+  </body>
+</html>

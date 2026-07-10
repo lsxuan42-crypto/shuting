@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>帳號管理</title>
+    <script>
+      if (location.protocol === "file:") {
+        location.replace("https://shuting.onrender.com/finance-users");
+      }
+    </script>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="finance-shell">
+      <header class="finance-header">
+        <div>
+          <p>財務報表權限</p>
+          <h1>帳號管理</h1>
+        </div>
+        <nav class="top-actions" aria-label="報表切換">
+          <a href="/finance">日報表</a>
+          <a href="/monthly-report">月報表</a>
+          <button id="logoutButton" type="button" class="link-button">登出</button>
+        </nav>
+      </header>
+
+      <section class="finance-card">
+        <div class="finance-section-title">
+          <h2>新增 / 修改人員</h2>
+        </div>
+        <form id="userForm" class="user-form">
+          <div class="finance-input-grid">
+            <label>
+              <span>帳號</span>
+              <input name="username" type="text" autocomplete="off" required>
+            </label>
+            <label>
+              <span>姓名</span>
+              <input name="displayName" type="text" autocomplete="off" required>
+            </label>
+            <label>
+              <span>密碼</span>
+              <input name="password" type="password" autocomplete="new-password" placeholder="新增必填，修改可留空">
+            </label>
+          </div>
+
+          <div class="permission-grid">
+            <fieldset>
+              <legend>可看店面</legend>
+              <div id="storeChecks" class="check-list"></div>
+            </fieldset>
+            <fieldset>
+              <legend>可看報表</legend>
+              <label><input type="checkbox" name="pages" value="daily"> 日報表</label>
+              <label><input type="checkbox" name="pages" value="monthly"> 月報表</label>
+            </fieldset>
+            <fieldset>
+              <legend>管理權限</legend>
+              <label><input type="checkbox" name="canManageUsers"> 可管理帳號</label>
+              <label><input type="checkbox" name="active" checked> 啟用帳號</label>
+            </fieldset>
+          </div>
+
+          <button type="submit" class="primary-action">儲存帳號</button>
+          <p id="userMessage" class="form-message" role="status"></p>
+        </form>
+      </section>
+
+      <section class="finance-card report-table-card">
+        <div class="finance-section-title">
+          <h2>人員清單</h2>
+          <strong id="userCount">0 位</strong>
+        </div>
+        <div class="table-scroll">
+          <table class="finance-table user-table">
+            <thead>
+              <tr>
+                <th>帳號</th>
+                <th>姓名</th>
+                <th>店面</th>
+                <th>報表</th>
+                <th>管理</th>
+                <th>狀態</th>
+              </tr>
+            </thead>
+            <tbody id="userRows"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script src="/finance-auth.js"></script>
+    <script src="/finance-users.js"></script>
+  </body>
+</html>
