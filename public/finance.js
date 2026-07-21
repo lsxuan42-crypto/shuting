@@ -37,10 +37,24 @@ function percentToRate(value) {
   return number / 100;
 }
 
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function setupDailyReport() {
   const financeForm = document.querySelector("#financeForm");
   if (!financeForm) return;
 
+  const receiptForm = document.querySelector("#receiptForm");
+  const receiptFiles = document.querySelector("#receiptFiles");
+  const receiptMessage = document.querySelector("#receiptMessage");
+  const receiptList = document.querySelector("#receiptList");
+  const receiptCount = document.querySelector("#receiptCount");
   const storeSelect = document.querySelector("#storeSelect");
   const reportDate = document.querySelector("#reportDate");
   const dailyMessage = document.querySelector("#dailyMessage");
@@ -50,6 +64,7 @@ function setupDailyReport() {
   const dailyExpense = document.querySelector("#dailyExpense");
   const dailyProfit = document.querySelector("#dailyProfit");
   const dailyProfitTable = document.querySelector("#dailyProfitTable");
+  let currentReceipts = [];
 
   function amountFromForm(name) {
     const value = Number(financeForm.elements[name]?.value || 0);
@@ -79,6 +94,8 @@ function setupDailyReport() {
 
   function fillDailyForm(report) {
     clearDailyForm();
+    currentReceipts = report?.receipts || [];
+    renderReceipts();
     if (!report) return;
 
     for (const field of incomeFields) {
@@ -89,6 +106,45 @@ function setupDailyReport() {
     }
     financeForm.elements.note.value = report.note || "";
     calculateDailyTotals();
+  }
+
+  function fileSizeLabel(size) {
+    const bytes = Number(size || 0);
+    if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`;
+    if (bytes >= 1_000) return `${Math.round(bytes / 1_000)} KB`;
+    return `${bytes} B`;
+  }
+
+  function renderReceipts() {
+    receiptCount.textContent = `${currentReceipts.length} 張`;
+    if (!currentReceipts.length) {
+      receiptList.innerHTML = `<div class="queue-empty">尚未上傳支出單據</div>`;
+      return;
+    }
+
+    receiptList.innerHTML = currentReceipts
+      .map((receipt) => `
+        <article class="receipt-row">
+          <div>
+            <strong>${escapeHtml(receipt.name)}</strong>
+            <span>${fileSizeLabel(receipt.size)}｜${new Date(receipt.uploadedAt).toLocaleString("zh-TW")}</span>
+          </div>
+          <div class="actions">
+            <button type="button" class="secondary" data-open-receipt="${receipt.id}">查看</button>
+            <button type="button" class="danger" data-delete-receipt="${receipt.id}">刪除</button>
+          </div>
+        </article>
+      `)
+      .join("");
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
   }
 
   function dailyPayload() {
@@ -131,7 +187,99 @@ function setupDailyReport() {
     fillDailyForm(data.report);
   }
 
+  async function uploadReceipts() {
+    if (!storeSelect.value || !reportDate.value) return;
+    const files = Array.from(receiptFiles.files || []);
+    if (!files.length) {
+      receiptMessage.textContent = "請先選擇單據檔案。";
+      return;
+    }
+
+    receiptMessage.textContent = "";
+    const button = receiptForm.querySelector("button[type='submit']");
+    button.disabled = true;
+    button.textContent = "上傳中";
+
+    try {
+      const payloadFiles = [];
+      for (const file of files) {
+        payloadFiles.push({
+          name: file.name,
+          type: file.type,
+          dataUrl: await fileToDataUrl(file)
+        });
+      }
+
+      const response = await financeFetch("/api/finance/receipts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storeId: storeSelect.value,
+          date: reportDate.value,
+          files: payloadFiles
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "單據上傳失敗");
+
+      receiptFiles.value = "";
+      receiptMessage.textContent = "單據已上傳";
+      await loadDailyReport();
+    } catch (error) {
+      receiptMessage.textContent = error.message;
+    } finally {
+      button.disabled = false;
+      button.textContent = "上傳單據";
+    }
+  }
+
+  async function openReceipt(receiptId) {
+    const response = await financeFetch(`/api/finance/receipts/${encodeURIComponent(receiptId)}`);
+    if (!response.ok) {
+      const data = await response.json();
+      receiptMessage.textContent = data.error || "無法開啟單據";
+      return;
+    }
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    window.open(url, "_blank", "noopener");
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  async function deleteReceipt(receiptId) {
+    receiptMessage.textContent = "";
+    const response = await financeFetch(`/api/finance/receipts/${encodeURIComponent(receiptId)}`, {
+      method: "DELETE"
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      receiptMessage.textContent = data.error || "刪除失敗";
+      return;
+    }
+    receiptMessage.textContent = "單據已刪除";
+    await loadDailyReport();
+  }
+
   financeForm.addEventListener("input", calculateDailyTotals);
+
+  receiptForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    uploadReceipts();
+  });
+
+  receiptList.addEventListener("click", (event) => {
+    const openButton = event.target.closest("button[data-open-receipt]");
+    if (openButton) {
+      openReceipt(openButton.dataset.openReceipt);
+      return;
+    }
+
+    const deleteButton = event.target.closest("button[data-delete-receipt]");
+    if (deleteButton) {
+      deleteReceipt(deleteButton.dataset.deleteReceipt);
+    }
+  });
 
   storeSelect.addEventListener("change", () => {
     loadDailyReport();
@@ -244,7 +392,7 @@ function setupMonthlyReport() {
 
   function renderDailyRows(reports) {
     if (!reports.length) {
-      dailyRows.innerHTML = `<tr><td colspan="5">這個月份尚無日報資料</td></tr>`;
+      dailyRows.innerHTML = `<tr><td colspan="6">這個月份尚無日報資料</td></tr>`;
       return;
     }
 
@@ -255,7 +403,8 @@ function setupMonthlyReport() {
           <td>${money(report.totalIncome)}</td>
           <td>${money(report.totalExpenses)}</td>
           <td class="${Number(report.dailyProfit) < 0 ? "is-negative" : ""}">${money(report.dailyProfit)}</td>
-          <td>${report.note || ""}</td>
+          <td>${(report.receipts || []).length} 張</td>
+          <td>${escapeHtml(report.note || "")}</td>
         </tr>
       `)
       .join("");

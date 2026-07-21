@@ -3,3 +3,4 @@ node_modules
 data/queue.json
 data/finance-reports.json
 data/finance-users.json
+data/finance-receipts/

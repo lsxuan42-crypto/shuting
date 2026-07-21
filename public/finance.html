@@ -163,6 +163,22 @@
           <button type="submit" class="primary-action">儲存日報表</button>
         </section>
       </form>
+
+      <section class="finance-card receipt-card">
+        <div class="finance-section-title">
+          <h2>支出單據</h2>
+          <strong id="receiptCount">0 張</strong>
+        </div>
+        <form id="receiptForm" class="receipt-form">
+          <label>
+            <span>上傳收據 / 發票</span>
+            <input id="receiptFiles" type="file" accept="image/jpeg,image/png,image/webp,application/pdf" multiple>
+          </label>
+          <button type="submit" class="secondary">上傳單據</button>
+          <p id="receiptMessage" class="form-message" role="status"></p>
+        </form>
+        <div id="receiptList" class="receipt-list"></div>
+      </section>
     </main>
 
     <script src="/finance-auth.js"></script>

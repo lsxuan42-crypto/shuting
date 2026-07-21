@@ -10,6 +10,7 @@ const DATA_DIR = path.join(__dirname, "data");
 const DATA_FILE = process.env.DATA_FILE || path.join(DATA_DIR, "queue.json");
 const FINANCE_FILE = process.env.FINANCE_FILE || path.join(DATA_DIR, "finance-reports.json");
 const FINANCE_USERS_FILE = process.env.FINANCE_USERS_FILE || path.join(DATA_DIR, "finance-users.json");
+const FINANCE_RECEIPTS_DIR = process.env.FINANCE_RECEIPTS_DIR || path.join(DATA_DIR, "finance-receipts");
 
 const STORES = [
   { id: "minxiong", name: "民雄" },
@@ -41,6 +42,8 @@ const MIME_TYPES = {
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
+  ".webp": "image/webp",
+  ".pdf": "application/pdf",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",
   ".ico": "image/x-icon"
@@ -67,6 +70,7 @@ function writeStore(store) {
 function ensureFinanceFile() {
   const directory = path.dirname(FINANCE_FILE);
   if (!fs.existsSync(directory)) fs.mkdirSync(directory, { recursive: true });
+  if (!fs.existsSync(FINANCE_RECEIPTS_DIR)) fs.mkdirSync(FINANCE_RECEIPTS_DIR, { recursive: true });
   if (!fs.existsSync(FINANCE_FILE)) {
     fs.writeFileSync(FINANCE_FILE, JSON.stringify(DEFAULT_FINANCE_STORE, null, 2));
   }
@@ -245,7 +249,7 @@ function readBody(req) {
     let body = "";
     req.on("data", (chunk) => {
       body += chunk;
-      if (body.length > 1_000_000) {
+      if (body.length > 20_000_000) {
         reject(new Error("Request body is too large."));
         req.destroy();
       }
@@ -347,6 +351,52 @@ function normalizeReport(body, storeId) {
   normalized.totalExpenses = Object.values(normalized.expenses).reduce((sum, value) => sum + value, 0);
   normalized.dailyProfit = normalized.totalIncome - normalized.totalExpenses;
   return normalized;
+}
+
+function safeFileName(name) {
+  const parsed = path.parse(String(name || "receipt"));
+  const base = parsed.name.replace(/[^\w\u4e00-\u9fa5-]+/g, "-").slice(0, 48) || "receipt";
+  return base;
+}
+
+function extensionForReceipt(type, name) {
+  const ext = path.extname(String(name || "")).toLowerCase();
+  const byType = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "application/pdf": ".pdf"
+  };
+  if (Object.values(byType).includes(ext)) return ext;
+  return byType[type] || "";
+}
+
+function parseReceiptDataUrl(dataUrl) {
+  const match = String(dataUrl || "").match(/^data:([^;,]+);base64,(.+)$/);
+  if (!match) return null;
+  return {
+    type: match[1],
+    buffer: Buffer.from(match[2], "base64")
+  };
+}
+
+function publicReceipt(receipt) {
+  return {
+    id: receipt.id,
+    name: receipt.name,
+    type: receipt.type,
+    size: receipt.size,
+    uploadedAt: receipt.uploadedAt,
+    uploadedBy: receipt.uploadedBy
+  };
+}
+
+function findReceipt(financeStore, receiptId) {
+  for (const report of financeStore.reports) {
+    const receipt = (report.receipts || []).find((item) => item.id === receiptId);
+    if (receipt) return { report, receipt };
+  }
+  return null;
 }
 
 function monthRange(month) {
@@ -651,7 +701,10 @@ async function handleApi(req, res) {
       const feeRates = financeStore.feeRates[storeId] || DEFAULT_FEE_RATES;
       sendJson(res, 200, {
         store: STORES.find((item) => item.id === storeId),
-        reports,
+        reports: reports.map((report) => ({
+          ...report,
+          receipts: (report.receipts || []).map(publicReceipt)
+        })),
         feeRates,
         summary: buildMonthlySummary(reports, feeRates)
       });
@@ -674,7 +727,10 @@ async function handleApi(req, res) {
     const financeStore = readFinanceStore();
     const date = String(url.searchParams.get("date") || "").trim();
     const report = financeStore.reports.find((item) => item.storeId === storeId && item.date === date) || null;
-    sendJson(res, 200, { report, feeRates: financeStore.feeRates[storeId] || DEFAULT_FEE_RATES });
+    sendJson(res, 200, {
+      report: report ? { ...report, receipts: (report.receipts || []).map(publicReceipt) } : null,
+      feeRates: financeStore.feeRates[storeId] || DEFAULT_FEE_RATES
+    });
     return;
   }
 
@@ -700,6 +756,7 @@ async function handleApi(req, res) {
         financeStore.reports[existingIndex] = {
           ...financeStore.reports[existingIndex],
           ...report,
+          receipts: financeStore.reports[existingIndex].receipts || [],
           createdAt: financeStore.reports[existingIndex].createdAt || report.updatedAt
         };
       } else {
@@ -716,6 +773,146 @@ async function handleApi(req, res) {
     } catch (error) {
       sendJson(res, 400, { error: error.message || "資料格式不正確。" });
     }
+    return;
+  }
+
+  if (req.method === "POST" && url.pathname === "/api/finance/receipts") {
+    try {
+      const body = await readBody(req);
+      const storeId = String(body.storeId || "").trim();
+      const date = String(body.date || "").trim();
+      const user = requireFinanceUser(req, res, { page: "daily", storeId });
+      if (!user) return;
+
+      if (!storeExists(storeId) || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        sendJson(res, 400, { error: "店面或日期不正確。" });
+        return;
+      }
+
+      const files = Array.isArray(body.files) ? body.files : [];
+      if (!files.length) {
+        sendJson(res, 400, { error: "請選擇要上傳的單據。" });
+        return;
+      }
+      if (files.length > 8) {
+        sendJson(res, 400, { error: "一次最多上傳 8 個檔案。" });
+        return;
+      }
+
+      const preparedFiles = [];
+      for (const file of files) {
+        const parsed = parseReceiptDataUrl(file.dataUrl);
+        const ext = extensionForReceipt(parsed?.type, file.name);
+        if (!parsed || !ext) {
+          sendJson(res, 400, { error: "只支援 JPG、PNG、WEBP 或 PDF 單據。" });
+          return;
+        }
+        if (parsed.buffer.length > 6_000_000) {
+          sendJson(res, 400, { error: "單一檔案不可超過 6MB。" });
+          return;
+        }
+        preparedFiles.push({ file, parsed, ext });
+      }
+
+      const financeStore = readFinanceStore();
+      let report = financeStore.reports.find((item) => item.storeId === storeId && item.date === date);
+      if (!report) {
+        report = normalizeReport({ date, income: {}, expenses: {}, note: "" }, storeId);
+        report.id = crypto.randomUUID();
+        report.createdAt = report.updatedAt;
+        report.receipts = [];
+        financeStore.reports.push(report);
+      }
+
+      const receiptDir = path.join(FINANCE_RECEIPTS_DIR, storeId, date);
+      fs.mkdirSync(receiptDir, { recursive: true });
+      const uploaded = [];
+
+      for (const { file, parsed, ext } of preparedFiles) {
+        const id = crypto.randomUUID();
+        const filename = `${id}-${safeFileName(file.name)}${ext}`;
+        const relativePath = path.join(storeId, date, filename);
+        const fullPath = path.join(FINANCE_RECEIPTS_DIR, relativePath);
+        fs.writeFileSync(fullPath, parsed.buffer);
+
+        const receipt = {
+          id,
+          name: String(file.name || filename).slice(0, 120),
+          type: parsed.type,
+          size: parsed.buffer.length,
+          path: relativePath,
+          uploadedAt: new Date().toISOString(),
+          uploadedBy: user.username
+        };
+        report.receipts = [...(report.receipts || []), receipt];
+        uploaded.push(publicReceipt(receipt));
+      }
+
+      report.updatedAt = new Date().toISOString();
+      financeStore.reports.sort((a, b) => `${a.storeId}:${a.date}`.localeCompare(`${b.storeId}:${b.date}`));
+      writeFinanceStore(financeStore);
+      sendJson(res, 200, { receipts: uploaded });
+    } catch (error) {
+      sendJson(res, 400, { error: error.message || "單據上傳失敗。" });
+    }
+    return;
+  }
+
+  if (req.method === "GET" && url.pathname.startsWith("/api/finance/receipts/")) {
+    const user = requireFinanceUser(req, res);
+    if (!user) return;
+
+    const receiptId = decodeURIComponent(url.pathname.split("/").pop() || "");
+    const financeStore = readFinanceStore();
+    const result = findReceipt(financeStore, receiptId);
+    if (!result) {
+      sendJson(res, 404, { error: "找不到單據。" });
+      return;
+    }
+    if (!hasStoreAccess(user, result.report.storeId) || !hasPageAccess(user, "daily")) {
+      sendJson(res, 403, { error: "此帳號沒有這張單據的權限。" });
+      return;
+    }
+
+    const receiptRoot = path.normalize(FINANCE_RECEIPTS_DIR + path.sep);
+    const fullPath = path.normalize(path.join(FINANCE_RECEIPTS_DIR, result.receipt.path));
+    if (!fullPath.startsWith(receiptRoot) || !fs.existsSync(fullPath)) {
+      sendJson(res, 404, { error: "單據檔案不存在。" });
+      return;
+    }
+
+    res.writeHead(200, {
+      "Content-Type": result.receipt.type || "application/octet-stream",
+      "Content-Disposition": `inline; filename="${encodeURIComponent(result.receipt.name)}"`,
+      "Cache-Control": "no-store"
+    });
+    fs.createReadStream(fullPath).pipe(res);
+    return;
+  }
+
+  if (req.method === "DELETE" && url.pathname.startsWith("/api/finance/receipts/")) {
+    const user = requireFinanceUser(req, res);
+    if (!user) return;
+
+    const receiptId = decodeURIComponent(url.pathname.split("/").pop() || "");
+    const financeStore = readFinanceStore();
+    const result = findReceipt(financeStore, receiptId);
+    if (!result) {
+      sendJson(res, 404, { error: "找不到單據。" });
+      return;
+    }
+    if (!hasStoreAccess(user, result.report.storeId) || !hasPageAccess(user, "daily")) {
+      sendJson(res, 403, { error: "此帳號沒有刪除這張單據的權限。" });
+      return;
+    }
+
+    const receiptRoot = path.normalize(FINANCE_RECEIPTS_DIR + path.sep);
+    const fullPath = path.normalize(path.join(FINANCE_RECEIPTS_DIR, result.receipt.path));
+    result.report.receipts = (result.report.receipts || []).filter((item) => item.id !== receiptId);
+    result.report.updatedAt = new Date().toISOString();
+    writeFinanceStore(financeStore);
+    if (fullPath.startsWith(receiptRoot) && fs.existsSync(fullPath)) fs.unlinkSync(fullPath);
+    sendJson(res, 200, { ok: true });
     return;
   }
 

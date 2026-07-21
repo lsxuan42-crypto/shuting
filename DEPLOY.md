@@ -9,6 +9,9 @@
 - 管理 PIN：設定環境變數 `ADMIN_PIN`
 - 財務報表管理者密碼：設定環境變數 `FINANCE_ADMIN_PASSWORD`
 - 候位資料檔：建議設定環境變數 `DATA_FILE`
+- 財務資料檔：建議設定環境變數 `FINANCE_FILE`
+- 財務帳號檔：建議設定環境變數 `FINANCE_USERS_FILE`
+- 支出單據資料夾：建議設定環境變數 `FINANCE_RECEIPTS_DIR`
 
 範例：
 
@@ -16,13 +19,16 @@
 ADMIN_PIN=請改成你的管理密碼
 FINANCE_ADMIN_PASSWORD=請改成你的財務管理者密碼
 DATA_FILE=/data/queue.json
+FINANCE_FILE=/data/finance-reports.json
+FINANCE_USERS_FILE=/data/finance-users.json
+FINANCE_RECEIPTS_DIR=/data/finance-receipts
 ```
 
 ## 主機需求
 
-請選「可以保存檔案」的主機，或加購/啟用 persistent disk。候位資料會存在 `DATA_FILE` 指定的位置。
+請選「可以保存檔案」的主機，或加購/啟用 persistent disk。候位資料會存在 `DATA_FILE` 指定的位置，財務日報、帳號權限與支出單據會存在 `FINANCE_FILE`、`FINANCE_USERS_FILE`、`FINANCE_RECEIPTS_DIR` 指定的位置。
 
-如果主機沒有保存檔案的空間，網站仍可使用，但主機重啟或重新部署後候位資料可能會消失。
+如果主機沒有保存檔案的空間，網站仍可使用，但主機重啟或重新部署後候位、財務報表、帳號權限與支出單據可能會消失。
 
 ## 外部網址
 

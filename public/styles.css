@@ -840,6 +840,54 @@ h2 {
   font-weight: 900;
 }
 
+.receipt-card {
+  display: grid;
+  gap: 16px;
+}
+
+.receipt-form {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.receipt-form .form-message {
+  grid-column: 1 / -1;
+}
+
+.receipt-list {
+  display: grid;
+  gap: 10px;
+}
+
+.receipt-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 74px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: #fbfcfb;
+}
+
+.receipt-row strong,
+.receipt-row span {
+  display: block;
+}
+
+.receipt-row strong {
+  overflow-wrap: anywhere;
+}
+
+.receipt-row span {
+  margin-top: 4px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .auth-shell {
   width: min(520px, calc(100% - 32px));
   min-height: 100vh;
@@ -916,6 +964,7 @@ fieldset input[type="checkbox"] {
   .daily-summary-grid,
   .monthly-kpis,
   .month-tools,
+  .receipt-form,
   .permission-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -1051,5 +1100,14 @@ fieldset input[type="checkbox"] {
 
   .finance-card {
     padding: 18px;
+  }
+
+  .receipt-form,
+  .receipt-row {
+    grid-template-columns: 1fr;
+  }
+
+  .receipt-row .actions {
+    justify-content: stretch;
   }
 }
